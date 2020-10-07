@@ -7,6 +7,7 @@ import time
 import copy
 import argparse
 from datetime import datetime
+import os
 
 class Application(tk.Frame):
     def __init__(self, master=None,args=None):
@@ -15,6 +16,7 @@ class Application(tk.Frame):
         self.color_curr = None
         self.depth_curr = None
         self.cameraInit(args)
+        self.save_dir = args.save_dir if args is not None else '.'
         self.item_list = ['None','Ball', 'Boat', 'Cup', 'Fork', 'Glove', 'Hat', 'Shoe', 'Spoon', 'Tayo', 'Teddy']
 
         cameraFuncWrapper = self.cameraDisconnect if self.camera_valid else ft.partial(self.cameraInit,args)
@@ -101,13 +103,19 @@ class Application(tk.Frame):
         self.depth_curr = Image.fromarray(depth_np)
         
     def shot(self):
+        r = self.red_selected.get()
+        g = self.green_selected.get()
+        b = self.blue_selected.get()
+        d = os.path.join(self.save_dir, self.item_list[r])
+        if not os.path.exists(d):
+            os.makedirs(d)
         t = datetime.now()
-        t_string = t.strftime("%Y%m%d_%H%M%S_")
-        item_string = "{}_{}_{}_".format(self.item_list[self.red_selected.get()]
-                                         , self.item_list[self.green_selected.get()]
-                                         , self.item_list[self.blue_selected.get()])
-        self.color_curr.save(t_string+item_string+'color.png')
-        self.depth_curr.save(t_string+item_string+'depth.png')
+        t_string = t.strftime("%Y%m%d_%H%M%S.%f")[:-3]
+        item_string = "{}_{}_{}_".format(self.item_list[r]
+                                         , self.item_list[g]
+                                         , self.item_list[b])
+        self.color_curr.save(os.path.join(d, item_string + t_string + '_color' + '.png'))
+        self.depth_curr.save(os.path.join(d, item_string + t_string + '_depth' + '.png'))
 
     def shotbinder(self,event):
         self.shot()
@@ -145,7 +153,10 @@ if __name__=='__main__':
     parser.add_argument('-height', type=int, default=480, help='image size(height), (default: 480)')
     parser.add_argument('-FPS', type=int, default=30, help='FPS of dataset, it should be a divisor of 30 , (default: 1)')
     parser.add_argument('-total_frames', type=int, default=20, help='number of frames(images), (default: 30)')
+    parser.add_argument('-save_dir', type=str, default='data', help='path to the save directory')
     args = parser.parse_args()
+    if not os.path.exists(args.save_dir):
+        os.makedirs(args.save_dir)
     root = tk.Tk()
     root.resizable(0,0)
     root.title("Test")

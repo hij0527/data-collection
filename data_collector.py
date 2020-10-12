@@ -9,71 +9,73 @@ import argparse
 from datetime import datetime
 import os
 
+
 class Application(tk.Frame):
-    def __init__(self, master=None,args=None):
-        tk.Frame.__init__(self,master,padx=5,pady=5)
+    def __init__(self, master=None, args=None):
+        tk.Frame.__init__(self, master, padx=5, pady=5)
         self.camera_valid = False
         self.color_curr = None
         self.depth_curr = None
         self.cameraInit(args)
         self.save_dir = args.save_dir if args is not None else '.'
-        self.item_list = ['None','Ball', 'Boat', 'Cup', 'Fork', 'Glove', 'Hat', 'Shoe', 'Spoon', 'Tayo', 'Teddy']
+        self.item_list = ['None', 'Ball', 'Boat', 'Cup', 'Fork', 'Glove', 'Hat', 'Shoe', 'Spoon', 'Tayo', 'Teddy']
+        self.color_list = ['Red', 'Green', 'Blue']
 
-        cameraFuncWrapper = self.cameraDisconnect if self.camera_valid else ft.partial(self.cameraInit,args)
-        self.connect_var = tk.StringVar(self,"Connected" if self.camera_valid else "Not Connected")
-        self.connect_button = tk.Button(self,text="Disconnect" if self.camera_valid else "Connect",command=cameraFuncWrapper)
-        self.connect_button.grid(row=0,column=0,sticky='ew')
-        self.connect_label = tk.Label(self,textvariable=self.connect_var)
-        self.connect_label.grid(row=0,column=1,sticky='ew')
-        blackimg = ImageTk.PhotoImage(Image.fromarray(np.zeros((240,320),dtype=np.int32)))
-        self.image_rgb = tk.Label(self,image=blackimg)
+        cameraFuncWrapper = self.cameraDisconnect if self.camera_valid else ft.partial(self.cameraInit, args)
+        self.connect_var = tk.StringVar(self, "Connected" if self.camera_valid else "Not Connected")
+        self.connect_button = tk.Button(self, text="Disconnect" if self.camera_valid else "Connect", command=cameraFuncWrapper)
+        self.connect_button.grid(row=0, column=0, sticky='ew')
+        self.connect_label = tk.Label(self, textvariable=self.connect_var)
+        self.connect_label.grid(row=0, column=1, sticky='ew')
+        blackimg = ImageTk.PhotoImage(Image.fromarray(np.zeros((240, 320), dtype=np.int32)))
+        self.image_rgb = tk.Label(self, image=blackimg)
+        self.image_rgb.image = blackimg
+        self.image_rgb.grid(row=1, column=0, columnspan=1, sticky='ew')
+        self.image_depth = tk.Label(self, image=blackimg)
         self.image_rgb.image=blackimg
-        self.image_rgb.grid(row=1,column=0,columnspan=1,sticky='ew')
-        self.image_depth = tk.Label(self,image=blackimg)
-        self.image_rgb.image=blackimg
-        self.image_depth.grid(row=1,column=1,columnspan=1,sticky='ew')
-        self.shot_button = tk.Button(self,text='촬영',command=self.shot)
-        self.shot_button.grid(row=2,column=0,columnspan=2,sticky='ew')
-        
-        self.red_selected = self.createList(self, 'Red',self.item_list,2)
-        self.green_selected = self.createList(self, 'Green',self.item_list,3)
-        self.blue_selected = self.createList(self, 'Blue',self.item_list,4)
+        self.image_depth.grid(row=1, column=1, columnspan=1, sticky='ew')
+        self.shot_button = tk.Button(self, text='촬영', command=self.shot)
+        self.shot_button.grid(row=2, column=0, columnspan=2, sticky='ew')
+
+        self.red_selected = self.createList(self, 'Red', self.item_list, 2)
+        self.green_selected = self.createList(self, 'Green', self.item_list, 3)
+        self.blue_selected = self.createList(self, 'Blue', self.item_list, 4)
+        self.main_selected = self.createList(self, 'Main', self.color_list, 5)
 
         self.update()
 
-    def createList(self,root,name,item_list,columnidx):
-        element = tk.LabelFrame(root,text=name)
+    def createList(self, root, name, item_list, columnidx):
+        element = tk.LabelFrame(root, text=name)
         var = tk.IntVar(root, 0)
-        for i,item in enumerate(item_list):
+        for i, item in enumerate(item_list):
             self.item_f = tk.Frame(element)
-            self.item_label = tk.Label(self.item_f,text=item,width=10)
-            self.item_radio = tk.Radiobutton(self.item_f,variable=var, value=i)                
-            self.item_radio.grid(row=0,column=0)
-            self.item_label.grid(row=0,column=1)
-            self.item_f.grid(row=i,column=0)
-        element.grid(row=0,column=columnidx,rowspan=3,sticky='ns',padx=5)
+            self.item_label = tk.Label(self.item_f, text=item, width=7)
+            self.item_radio = tk.Radiobutton(self.item_f, variable=var, value=i)                
+            self.item_radio.grid(row=0, column=0)
+            self.item_label.grid(row=0, column=1)
+            self.item_f.grid(row=i, column=0)
+        element.grid(row=0, column=columnidx, rowspan=3, sticky='ns', padx=5)
         return var
-        
 
     def update(self):
-        camera_func_wrapper = self.cameraDisconnect if self.camera_valid else ft.partial(self.cameraInit,args)
+        camera_func_wrapper = self.cameraDisconnect if self.camera_valid else ft.partial(self.cameraInit, args)
         self.connect_var.set("Connected" if self.camera_valid else "Not Connected")
-        self.connect_button.config(text="Disconnect" if self.camera_valid else "Connect",command=camera_func_wrapper)
+        self.connect_button.config(text="Disconnect" if self.camera_valid else "Connect", command=camera_func_wrapper)
         if self.camera_valid:
             self.getFrame()
-            imgrgb = ImageTk.PhotoImage(self.color_curr.resize(size=(320,240)))
+            imgrgb = ImageTk.PhotoImage(self.color_curr.resize(size=(320, 240)))
             self.image_rgb.config(image=imgrgb)
             self.image_rgb.image=imgrgb
-            imgdepth = ImageTk.PhotoImage(self.depth_curr.resize(size=(320,240),resample=0))
+            imgdepth = ImageTk.PhotoImage(self.depth_curr.resize(size=(320, 240), resample=0))
             self.image_depth.config(image=imgdepth)
             self.image_depth.image=imgdepth
-        self.after(1000//30, self.update)
+        self.after(1000 // 30, self.update)
 
-    def cameraInit(self,args):
+    def cameraInit(self, args):
         self.pipeline = rs.pipeline()
         config = rs.config()
-        config.enable_stream(rs.stream.depth,args.width,args.height,rs.format.z16,30)
-        config.enable_stream(rs.stream.color,args.width,args.height,rs.format.bgr8,30)
+        config.enable_stream(rs.stream.depth, args.width, args.height, rs.format.z16, 30)
+        config.enable_stream(rs.stream.color, args.width, args.height, rs.format.bgr8, 30)
         self.total_frames = args.total_frames
         try:
             self.profile = self.pipeline.start(config)
@@ -99,28 +101,30 @@ class Application(tk.Frame):
             depth_np = np.asanyarray(depth.as_frame().get_data())
             color_np = np.asanyarray(color.as_frame().get_data())
             break
-        self.color_curr = Image.fromarray(color_np[:,:,::-1])
+        self.color_curr = Image.fromarray(color_np[:, :, ::-1])
         self.depth_curr = Image.fromarray(depth_np)
         
     def shot(self):
         r = self.red_selected.get()
         g = self.green_selected.get()
         b = self.blue_selected.get()
-        d = os.path.join(self.save_dir, self.item_list[r])
+        m = self.main_selected.get()
+        t = datetime.now()
+        today = t.strftime("%Y%m%d")
+        d = os.path.join(self.save_dir, today, self.item_list[r])
         if not os.path.exists(d):
             os.makedirs(d)
         t = datetime.now()
-        t_string = t.strftime("%Y%m%d_%H%M%S.%f")[:-3]
-        item_string = "{}_{}_{}_".format(self.item_list[r]
-                                         , self.item_list[g]
-                                         , self.item_list[b])
-        self.color_curr.save(os.path.join(d, item_string + t_string + '_color' + '.png'))
-        self.depth_curr.save(os.path.join(d, item_string + t_string + '_depth' + '.png'))
+        t_string = t.strftime("%H%M%S.%f")[:-3]
+        item_string = "{}_{}_{}_{}".format(self.item_list[r].lower(), self.item_list[g].lower(),
+                                           self.item_list[b].lower(), m + 1)
+        self.color_curr.save(os.path.join(d, item_string + '_' + t_string + '_color' + '.png'))
+        self.depth_curr.save(os.path.join(d, item_string + '_' + t_string + '_depth' + '.png'))
 
-    def shotbinder(self,event):
+    def shotbinder(self, event):
         self.shot()
 
-    def record(self,duration=2): #Unused
+    def record(self, duration=2): #Unused
         colors = []
         depths = []
         try:
@@ -140,11 +144,10 @@ class Application(tk.Frame):
                 colors.append(copy.copy(color_np))
         finally:
             for i in range(len(depths)):
-                color_pil = Image.fromarray(colors[i][:,:,::-1])
+                color_pil = Image.fromarray(colors[i][:, :, ::-1])
                 depth_pil = Image.fromarray(depths[i])
                 color_pil.save('color{}.png'.format(i+1))
                 depth_pil.save('depth{}.png'.format(i+1))
-
 
 
 if __name__=='__main__':
@@ -158,9 +161,9 @@ if __name__=='__main__':
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
     root = tk.Tk()
-    root.resizable(0,0)
+    root.resizable(0, 0)
     root.title("Test")
-    app = Application(root,args)
+    app = Application(root, args)
     app.pack()
-    root.bind("<space>",app.shotbinder)
+    root.bind("<space>", app.shotbinder)
     root.mainloop()

@@ -111,15 +111,20 @@ class Application(tk.Frame):
         m = self.main_selected.get()
         t = datetime.now()
         today = t.strftime("%Y%m%d")
-        d = os.path.join(self.save_dir, today, self.item_list[r])
-        if not os.path.exists(d):
-            os.makedirs(d)
+        d_color = os.path.join(self.save_dir, today, 'color', self.item_list[r])
+        d_depth = os.path.join(self.save_dir, today, 'depth', self.item_list[r])
+        if not os.path.exists(d_color):
+            os.makedirs(d_color)
+        if not os.path.exists(d_depth):
+            os.makedirs(d_depth)
         t = datetime.now()
         t_string = t.strftime("%H%M%S.%f")[:-3]
         item_string = "{}_{}_{}_{}".format(self.item_list[r].lower(), self.item_list[g].lower(),
                                            self.item_list[b].lower(), m + 1)
-        self.color_curr.save(os.path.join(d, item_string + '_' + t_string + '_color' + '.png'))
-        self.depth_curr.save(os.path.join(d, item_string + '_' + t_string + '_depth' + '.png'))
+        item_string += '_'
+        item_string += t_string
+        self.color_curr.save(os.path.join(d_color, item_string + '_color' + '.png'))
+        self.depth_curr.save(os.path.join(d_depth, item_string + '_depth' + '.png'))
 
     def shotbinder(self, event):
         self.shot()
